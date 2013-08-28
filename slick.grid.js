@@ -52,7 +52,7 @@ if (typeof Slick === "undefined") {
      * @param {Array}             columns     An array of column definitions.
      * @param {Object}            options     Grid options.
      **/
-    function SlickGrid(container, data, columns, options) {
+    function SlickGrid(container, data, columnDefs, options) {
         // settings
         var defaults = {
             explicitInitialization: false,
@@ -177,10 +177,13 @@ if (typeof Slick === "undefined") {
         var plugins = [];
         var cellCssClasses = {};
 
+        var columns = [];
         var columnsById = {};
         var sortColumns = [];
         var columnPosLeft = [];
         var columnPosRight = [];
+        var spanColumns = [];
+        var headerGrouping = false;
 
         // async call handles
         var h_editorLoader = null;
@@ -233,9 +236,38 @@ if (typeof Slick === "undefined") {
         var $viewportScrollContainerY;
         var $headerScrollContainer;
         var $headerRowScrollContainer;
-
+        
         // ////////////////////////////////////////////////////////////////////////////////////////////
         // Initialization
+
+        function initializeColumns() {
+            //var lastIndex = 0;
+            for (var i = 0; i < columnDefs.length; i++) {
+                //lastIndex = (lastIndex == 0) ? i : (lastIndex + 1);
+                spanColumns[i] = {
+                    name: '',
+                    startIndex: columns.length,
+                    endIndex: i,
+                    addColumWidthDiff: false
+                };
+                if (typeof columnDefs[i].columns == 'object') {
+                    for (var j = 0; j < columnDefs[i].columns.length; j++) {
+                        //lastIndex = i + j;
+                        columns[columns.length] = columnDefs[i].columns[j];
+                        spanColumns[i].name = columnDefs[i].name;
+                        //spanColumns[i].endIndex = lastIndex;
+                        spanColumns[i].addColumWidthDiff = true;
+                        spanColumns[i].headerCssClass = 'headerAlignWithBorder';
+                        headerGrouping = true;
+                    }
+                    spanColumns[i].endIndex = spanColumns[i].startIndex + (columnDefs[i].columns.length - 1);
+                }
+                else {
+                    spanColumns[i].name = '';
+                    columns[columns.length] = columnDefs[i];
+                }
+            }
+        }
 
         function init() {
             $container = $(container);
@@ -250,6 +282,7 @@ if (typeof Slick === "undefined") {
             options = $.extend({}, defaults, options);
             validateAndEnforceOptions();
             columnDefaults.width = options.defaultColumnWidth;
+            initializeColumns();
 
             columnsById = {};
             for (var i = 0; i < columns.length; i++) {
@@ -302,10 +335,14 @@ if (typeof Slick === "undefined") {
             // Cache the header scroller containers
             $headerScroller = $().add($headerScrollerL).add($headerScrollerR);
 
+            // Append the column span containers to the headers
+            $spanHeadersL = $("<div class='slick-header-columns slick-header-columns-left slicker-header-colspan' style='left:-1000px' />").appendTo($headerScrollerL);
+            $spanHeadersR = $("<div class='slick-header-columns slick-header-columns-right slicker-header-colspan' style='left:-1000px' />").appendTo($headerScrollerR);
+
             // Append the columnn containers to the headers
             $headerL = $("<div class='slick-header-columns slick-header-columns-left' style='left:-1000px' />").appendTo($headerScrollerL);
             $headerR = $("<div class='slick-header-columns slick-header-columns-right' style='left:-1000px' />").appendTo($headerScrollerR);
-
+            
             // Cache the header columns
             $headers = $().add($headerL).add($headerR);
 
@@ -843,6 +880,52 @@ if (typeof Slick === "undefined") {
             if (options.enableColumnReorder) {
                 setupColumnReorder();
             }
+
+            createSpanHeaderRow();
+        }
+
+        //Method used to create Spanned header row
+        function createSpanHeaderRow() {
+            if (!headerGrouping) {
+                $spanHeadersL.remove();
+                $spanHeadersR.remove();
+                return;
+            }
+
+            $spanHeadersL.empty();
+            $spanHeadersR.empty();
+            
+            var hasFrozenColumns = (options.frozenColumn > -1);
+
+            //$headers.width(getHeadersWidth());
+            for (var i = 0; i < spanColumns.length; i++) {
+                var spanColumn = spanColumns[i];
+
+                var index = spanColumn.startIndex;
+                var width = 0;
+                do {
+                    width += $($($headers).children().get(index)).width();
+                    index++;
+                } while (index <= spanColumn.endIndex);
+
+                if (spanColumn.addColumWidthDiff)
+                    width += headerColumnWidthDiff;
+                
+                var columnIndex = spanColumn.startIndex
+                var isLeftColumnGroup = (columnIndex <= options.frozenColumn);
+                var $headerTarget = hasFrozenColumns ? (isLeftColumnGroup ? $spanHeadersL : $spanHeadersR) : $spanHeadersL;
+
+                var header = $("<div class='ui-state-default slick-header-column' id='" + uid + spanColumn.id + "' />")
+                 .html("<span class='slick-column-name'>" + spanColumn.name + "</span>")
+                 .width(width)
+                 .attr("title", spanColumn.toolTip || "")
+                 .data("column", spanColumn)
+                 .addClass(spanColumn.headerCssClass || "")
+                 .appendTo($headerTarget);
+            }
+
+            $($spanHeadersL).width($($headerL).width());
+            $($spanHeadersR).width($($headerR).width());
         }
 
         function setupColumnSort() {
