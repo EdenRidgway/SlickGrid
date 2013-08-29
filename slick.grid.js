@@ -901,20 +901,18 @@ if (typeof Slick === "undefined") {
             for (var i = 0; i < spanColumns.length; i++) {
                 var spanColumn = spanColumns[i];
 
-                var index = spanColumn.startIndex;
-                var width = 0;
-                do {
-                    width += $($($headers).children().get(index)).width();
-                    index++;
-                } while (index <= spanColumn.endIndex);
-
-                if (spanColumn.addColumWidthDiff)
-                    width += headerColumnWidthDiff;
-                
-                var columnIndex = spanColumn.startIndex
+                var columnIndex = spanColumn.startIndex;
                 var isLeftColumnGroup = (columnIndex <= options.frozenColumn);
                 var $headerTarget = hasFrozenColumns ? (isLeftColumnGroup ? $spanHeadersL : $spanHeadersR) : $spanHeadersL;
 
+                var headerChildren = $($headers).children();
+                var startElement = $(headerChildren.get(spanColumn.startIndex));
+                var endElement = $(headerChildren.get(spanColumn.endIndex));
+
+                var left = startElement.position().left;
+                var right = endElement.position().left + endElement.width();
+                var width = right - left;
+                
                 var header = $("<div class='ui-state-default slick-header-column' id='" + uid + spanColumn.id + "' />")
                  .html("<span class='slick-column-name'>" + spanColumn.name + "</span>")
                  .width(width)
