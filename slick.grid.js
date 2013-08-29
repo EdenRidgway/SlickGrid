@@ -1305,6 +1305,7 @@ if (typeof Slick === "undefined") {
                         updateCanvasWidth(true);
                         render();
                         trigger(self.onColumnsResized, {});
+                        createSpanHeaderRow();
                     });
             });
         }
