@@ -250,7 +250,7 @@ if (typeof Slick === "undefined") {
                     endIndex: i,
                     addColumWidthDiff: false
                 };
-                if (typeof columnDefs[i].columns == 'object') {
+                if (columnDefs[i].columns && typeof columnDefs[i].columns == 'object') {
                     for (var j = 0; j < columnDefs[i].columns.length; j++) {
                         //lastIndex = i + j;
                         columns[columns.length] = columnDefs[i].columns[j];
