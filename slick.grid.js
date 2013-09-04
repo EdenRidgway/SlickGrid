@@ -216,6 +216,9 @@ if (typeof Slick === "undefined") {
         var $headerRowL;
         var $headerRowR;
 
+        var $spanHeadersL;
+        var $spanHeadersR;
+
         var $topPanelScrollerL;
         var $topPanelScrollerR;
 
@@ -1456,6 +1459,8 @@ if (typeof Slick === "undefined") {
         }
 
         function createCssRules() {
+			if ($style) $style.remove();
+		
             $style = $("<style type='text/css' rel='stylesheet' />").appendTo($("head"));
             var rowHeight = (options.rowHeight - cellHeightDiff);
             var rules = [
